@@ -1,10 +1,49 @@
+/*
+ * ไลบรารี่ที่ใช้งาน
+ * 1.Blnyk จาก library manager
+ * 2.ClosedCube OPT3001 จาก library manager
+ * 3.DHT จาก library manager
+ * 
+ * 
+ * ใช้งาน
+ * 1. ใส่ token blynk
+ * 2. ใส่ ssid pass wifi
+ * 3. แก้ไข server ที่ใช้งาน
+ * 
+ * 
+ * ต่อสาย
+ * -DHT
+ * OUT -> 4
+ * vcc -> 3v
+ * GND -> GND
+ * 
+ * -OPT3001 light sensor
+ * SDA -> 21
+ * SCL -> 22
+ * vcc -> 3v
+ * GND -> GND
+ * 
+ * -Moisture sensor
+ * A0 -> 34
+ * vcc -> 3v
+ * GND -> GND
+ * 
+ * 
+ * Blynk Virtual pin
+ * V0 -> temp
+ * V1 -> humid
+ * V2 -> light
+ * V3 -> moisture
+ */
+
+
+
 #define BLYNK_PRINT Serial
 
 /* Fill in information from Blynk Device Info here */
 //#define BLYNK_TEMPLATE_ID           "TMPxxxxxx"
 //#define BLYNK_TEMPLATE_NAME         "Device"
-#define BLYNK_AUTH_TOKEN            "YourAuthToken"   // ใส่ Token
-
+#define BLYNK_AUTH_TOKEN            "YourAuthToken"   // <======= 1.ใส่ Token
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -25,7 +64,7 @@ ClosedCube_OPT3001 opt3001;
 #define DHTTYPE DHT11     // DHT11 temperature and humidity sensor
 DHT dht(DHTPIN, DHTTYPE);
 
-// ใส่ชื่อไวไฟกับรหัสผ่าน
+// ใส่ชื่อไวไฟกับรหัสผ่าน                     <======= 2.ใส่ ssid pass
 char ssid[] = "YourNetworkName";
 char pass[] = "YourPassword";
 
@@ -54,9 +93,8 @@ void setup()
   // Soil Moisture Sensor Setup
   pinMode(MOISTURE_PIN, INPUT);
 
-  // เชื่อมต่อไวไฟและblynk
+  // เชื่อมต่อไวไฟและblynk              <======= 3.แก้ไข server ที่ใช้งาน
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "elec.cmtc.ac.th", 8080);
-
 
 }
 
@@ -83,6 +121,8 @@ void loop()
 
     // อ่านค่าเซนเซอร์ความชื้นในดิน
     int moisture = analogRead(MOISTURE_PIN);
+    moisture = ( 100 - ( (moisture / 4095.00) * 100 ) );   // คำนวณค่าเป็นเปอร์เซน
+    Serial.println("Moisture: " + String(moisture));
 
     // Send data to Blynk app
     Blynk.virtualWrite(V0, t);
