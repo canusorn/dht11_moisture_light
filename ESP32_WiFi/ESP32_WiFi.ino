@@ -1,42 +1,46 @@
 /*
- * ไลบรารี่ที่ใช้งาน
- * 1.Blnyk จาก library manager
- * 2.ClosedCube OPT3001 จาก library manager
- * 3.DHT จาก library manager
- * 
- * 
- * ใช้งาน
- * 1. ใส่ token blynk
- * 2. ใส่ ssid pass wifi
- * 3. แก้ไข server ที่ใช้งาน
- * 
- * 
- * ต่อสาย
- * -DHT
- * OUT -> 4
- * vcc -> 3v
- * GND -> GND
- * 
- * -OPT3001 light sensor
- * SDA -> 21
- * SCL -> 22
- * vcc -> 3v
- * GND -> GND
- * 
- * -Moisture sensor
- * A0 -> 34
- * vcc -> 3v
- * GND -> GND
- * 
- * 
- * Blynk Virtual pin
- * V0 -> temp
- * V1 -> humid
- * V2 -> light
- * V3 -> moisture
- */
+   ไลบรารี่ที่ใช้งาน
+   1.Blnyk จาก library manager
+   2.ClosedCube OPT3001 จาก library manager
+   3.DHT จาก library manager
 
 
+   ใช้งาน
+   1. ใส่ token blynk
+   2. ใส่ ssid pass wifi
+   3. แก้ไข server ที่ใช้งาน
+
+
+   ต่อสาย
+   -DHT
+   OUT -> 4
+   vcc -> 3v
+   GND -> GND
+
+   -OPT3001 light sensor
+   SDA -> 21
+   SCL -> 22
+   vcc -> 3v
+   GND -> GND
+
+   -Moisture sensor
+   A0 -> 34
+   vcc -> 3v
+   GND -> GND
+
+   -Dimmer
+   vcc   -> 3v
+   gnd   -> gnd
+   zero  -> 27
+   tring -> 32
+
+   Blynk Virtual pin
+   V0 -> temp
+   V1 -> humid
+   V2 -> light
+   V3 -> moisture
+   V4 -> dimmer
+*/
 
 #define BLYNK_PRINT Serial
 
@@ -51,6 +55,12 @@
 #include <Wire.h>
 #include <ClosedCube_OPT3001.h>
 #include <DHT.h>
+
+#define TRIGPIN 32                 //    <======= ขาควบคุม DIMMER
+#define ZEROPIN 27
+
+hw_timer_t * timer = NULL;
+uint16_t trigTime = 9000;
 
 // ตั้งค่าสำหรับเซนเซอร์ความชื้นในดิน
 #define MOISTURE_PIN 34
@@ -70,10 +80,43 @@ char pass[] = "YourPassword";
 
 unsigned long previousMillis = 0;
 
+void IRAM_ATTR onZero() {
+
+  if (trigTime == 0) {
+    digitalWrite(TRIGPIN, HIGH);
+  } else if (trigTime == 10000) {
+    digitalWrite(TRIGPIN, LOW);
+  } else {
+    digitalWrite(TRIGPIN, LOW);
+    timerAlarmWrite(timer, trigTime, true); // set the alarm to trigger every 1 microsecond
+    timerAlarmEnable(timer); // enable the alarm
+  }
+}
+
+void IRAM_ATTR onTrig() {
+  digitalWrite(TRIGPIN, HIGH);
+  timerAlarmDisable(timer); // enable the alarm
+  delayMicroseconds(50);
+  digitalWrite(TRIGPIN, LOW);
+}
+
+BLYNK_WRITE(V4)
+{ /* This function gets called each time something changes on the widget */
+  int value = param.asInt();  /* This gets the 'value' of the Widget as an integer */
+  Serial.print("Dimer update to " + String(value) + "%");
+  trigTime = (100 - value) * 100;
+}
+
 void setup()
 {
   // Debug console
   Serial.begin(115200);
+
+  // ขาคอนไทรล Dimmer
+  digitalWrite(TRIGPIN, LOW);
+  pinMode(TRIGPIN, OUTPUT);
+  pinMode(ZEROPIN, INPUT);
+  attachInterrupt(ZEROPIN, onZero, RISING);
 
   // เรื่มต้นทำงาน opt3001
   Serial.println("ClosedCube OPT3001 Arduino Test");
@@ -96,6 +139,9 @@ void setup()
   // เชื่อมต่อไวไฟและblynk              <======= 3.แก้ไข server ที่ใช้งาน
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "elec.cmtc.ac.th", 8080);
 
+  // Initialize timer
+  timer = timerBegin(0, 80, true); // timer_id = 0, prescaler = 80, countUp = true
+  timerAttachInterrupt(timer, &onTrig, true); // attach the interrupt function
 }
 
 void loop()
