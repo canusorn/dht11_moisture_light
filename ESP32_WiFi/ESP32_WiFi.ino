@@ -47,7 +47,7 @@
 /* Fill in information from Blynk Device Info here */
 //#define BLYNK_TEMPLATE_ID           "TMPxxxxxx"
 //#define BLYNK_TEMPLATE_NAME         "Device"
-#define BLYNK_AUTH_TOKEN            "YourAuthToken"   // <======= 1.ใส่ Token
+#define BLYNK_AUTH_TOKEN            "HgpRAq3mLjnyIgBjO9spjnvKerAZoXJe"   // <======= 1.ใส่ Token
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -75,8 +75,8 @@ ClosedCube_OPT3001 opt3001;
 DHT dht(DHTPIN, DHTTYPE);
 
 // ใส่ชื่อไวไฟกับรหัสผ่าน                     <======= 2.ใส่ ssid pass
-char ssid[] = "YourNetworkName";
-char pass[] = "YourPassword";
+char ssid[] = "ssid";
+char pass[] = "pass";
 
 unsigned long previousMillis = 0;
 
@@ -88,6 +88,7 @@ void IRAM_ATTR onZero() {
     digitalWrite(TRIGPIN, LOW);
   } else {
     digitalWrite(TRIGPIN, LOW);
+    timerRestart(timer);
     timerAlarmWrite(timer, trigTime, true); // set the alarm to trigger every 1 microsecond
     timerAlarmEnable(timer); // enable the alarm
   }
@@ -95,8 +96,8 @@ void IRAM_ATTR onZero() {
 
 void IRAM_ATTR onTrig() {
   digitalWrite(TRIGPIN, HIGH);
-  timerAlarmDisable(timer); // enable the alarm
-  delayMicroseconds(50);
+  timerAlarmDisable(timer); // disable the alarm
+  delayMicroseconds(10);
   digitalWrite(TRIGPIN, LOW);
 }
 
@@ -112,22 +113,16 @@ void setup()
   // Debug console
   Serial.begin(115200);
 
-  // ขาคอนไทรล Dimmer
-  digitalWrite(TRIGPIN, LOW);
-  pinMode(TRIGPIN, OUTPUT);
-  pinMode(ZEROPIN, INPUT);
-  attachInterrupt(ZEROPIN, onZero, RISING);
-
   // เรื่มต้นทำงาน opt3001
   Serial.println("ClosedCube OPT3001 Arduino Test");
   opt3001.begin(OPT3001_ADDRESS);
   Serial.print("OPT3001 Manufacturer ID");
-  Serial.println(opt3001.readManufacturerID());
+  //  Serial.println(opt3001.readManufacturerID());
   Serial.print("OPT3001 Device ID");
-  Serial.println(opt3001.readDeviceID());
+  //  Serial.println(opt3001.readDeviceID());
   configureSensor();
-  printResult("High-Limit", opt3001.readHighLimit());
-  printResult("Low-Limit", opt3001.readLowLimit());
+  //  printResult("High-Limit", opt3001.readHighLimit());
+  //  printResult("Low-Limit", opt3001.readLowLimit());
   Serial.println("----");
 
   // DHT11 Setup
@@ -142,6 +137,13 @@ void setup()
   // Initialize timer
   timer = timerBegin(0, 80, true); // timer_id = 0, prescaler = 80, countUp = true
   timerAttachInterrupt(timer, &onTrig, true); // attach the interrupt function
+
+  // ขาคอนไทรล Dimmer
+  digitalWrite(TRIGPIN, LOW);
+  pinMode(TRIGPIN, OUTPUT);
+  pinMode(ZEROPIN, INPUT);
+  attachInterrupt(ZEROPIN, onZero, RISING);
+
 }
 
 void loop()
