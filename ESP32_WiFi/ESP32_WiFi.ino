@@ -108,7 +108,7 @@ void setup()
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "elec.cmtc.ac.th", 8080);
 
   // ขาคอนไทรล mosfet
-  ledcSetup(PWMPIN, 5000, 8);
+  ledcSetup(0, 5000, 8);
   ledcAttachPin(PWMPIN, 0);
   ledcWrite(0, 0);
 }
